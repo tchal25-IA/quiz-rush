@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import type { PublicUser } from '@quiz-rush/shared';
 import { api } from '../src/api';
 import { colors } from '../src/theme';
@@ -8,6 +16,11 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [missions, setMissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [authMsg, setAuthMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -24,6 +37,38 @@ export default function ProfileScreen() {
     refresh();
   }, []);
 
+  async function claimAccount() {
+    setBusy(true);
+    setAuthMsg(null);
+    try {
+      const auth = await api.claim(email.trim(), username.trim(), password);
+      setUser(auth.user);
+      setAuthMsg('Compte créé — progression conservée');
+      setPassword('');
+      await refresh();
+    } catch (e: any) {
+      setAuthMsg(e.message ?? 'Erreur');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loginAccount() {
+    setBusy(true);
+    setAuthMsg(null);
+    try {
+      const auth = await api.login(email.trim() || username.trim(), password);
+      setUser(auth.user);
+      setAuthMsg(`Connecté : ${auth.user.username}`);
+      setPassword('');
+      await refresh();
+    } catch (e: any) {
+      setAuthMsg(e.message ?? 'Erreur');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading || !user) {
     return (
       <View style={styles.center}>
@@ -33,7 +78,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.name}>{user.username}</Text>
       <Text style={styles.muted}>{user.isGuest ? 'Compte invité' : 'Compte lié'}</Text>
 
@@ -43,6 +88,66 @@ export default function ProfileScreen() {
         <Text style={styles.line}>Streak : {user.streak} jour(s)</Text>
         <Text style={styles.line}>Premium : {user.isPremium ? 'Oui' : 'Non (stub MVP)'}</Text>
       </View>
+
+      {user.isGuest ? (
+        <>
+          <Text style={styles.section}>Créer mon compte</Text>
+          <View style={styles.card}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              value={username}
+              onChangeText={setUsername}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Mot de passe (6+)"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Pressable style={styles.cta} disabled={busy} onPress={claimAccount}>
+              <Text style={styles.ctaText}>{busy ? '…' : 'Sauvegarder ma progression'}</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : null}
+
+      <Text style={styles.section}>Se connecter</Text>
+      <View style={styles.card}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email ou username"
+          placeholderTextColor={colors.muted}
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mot de passe"
+          placeholderTextColor={colors.muted}
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Pressable style={styles.btn} disabled={busy} onPress={loginAccount}>
+          <Text style={styles.btnText}>Connexion</Text>
+        </Pressable>
+      </View>
+      {authMsg ? <Text style={styles.authMsg}>{authMsg}</Text> : null}
 
       <Text style={styles.section}>Jokers</Text>
       <View style={styles.card}>
@@ -78,7 +183,7 @@ export default function ProfileScreen() {
           <Text style={styles.line}>{m.title}</Text>
           <Text style={styles.muted}>
             {m.description} · {m.progress}/{m.target}
-            {m.completed ? ' ✅' : ''}
+            {m.completed ? ' ✓' : ''}
           </Text>
         </View>
       ))}
@@ -98,9 +203,18 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 4,
+    gap: 8,
   },
   line: { color: colors.text, fontWeight: '600' },
+  input: {
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.text,
+  },
   row: { flexDirection: 'row', gap: 8 },
   btn: {
     flex: 1,
@@ -112,4 +226,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   btnText: { color: colors.accent, fontWeight: '700', fontSize: 12 },
+  cta: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  ctaText: { color: '#111', fontWeight: '800' },
+  authMsg: { color: colors.accent, fontWeight: '600' },
 });

@@ -23,7 +23,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? `Erreur ${res.status}`);
+    const msg = Array.isArray(body.message) ? body.message.join(', ') : body.message;
+    throw new Error(msg ?? `Erreur ${res.status}`);
   }
   return res.json() as Promise<T>;
 }
@@ -78,4 +79,34 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ type, method }),
     }),
+
+  async claim(email: string, username: string, password: string): Promise<AuthResponse> {
+    const auth = await request<AuthResponse>('/auth/claim', {
+      method: 'POST',
+      body: JSON.stringify({ email, username, password }),
+    });
+    await AsyncStorage.setItem(TOKEN_KEY, auth.accessToken);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(auth.user));
+    return auth;
+  },
+
+  async login(login: string, password: string): Promise<AuthResponse> {
+    const auth = await request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ login, password }),
+    });
+    await AsyncStorage.setItem(TOKEN_KEY, auth.accessToken);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(auth.user));
+    return auth;
+  },
+
+  async register(email: string, username: string, password: string): Promise<AuthResponse> {
+    const auth = await request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, username, password }),
+    });
+    await AsyncStorage.setItem(TOKEN_KEY, auth.accessToken);
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(auth.user));
+    return auth;
+  },
 };

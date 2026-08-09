@@ -1,10 +1,15 @@
 import { Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../src/theme';
 
 export default function RootLayout() {
   return (
     <>
+      <Head>
+        <title>Quiz Rush</title>
+        <meta name="description" content="Le TikTok de la connaissance — quiz 3 min, combos, duels." />
+      </Head>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
