@@ -165,3 +165,56 @@ export default function ChallengeScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20, gap: 12 },
+  title: { color: colors.primary, fontSize: 28, fontWeight: '900' },
+  muted: { color: colors.muted },
+  meta: { color: colors.accent, fontWeight: '700' },
+  question: { color: colors.text, fontSize: 20, fontWeight: '700' },
+  input: {
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: colors.text,
+  },
+  btn: {
+    backgroundColor: colors.bgElevated,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  btnText: { color: colors.accent, fontWeight: '700' },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 8,
+  },
+  line: { color: colors.text, fontWeight: '600' },
+  cta: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  ctaText: { color: '#111', fontWeight: '800' },
+  answer: {
+    backgroundColor: colors.card,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  answerText: { color: colors.text, fontWeight: '600' },
+  feedback: { color: colors.text, fontWeight: '800', textAlign: 'center' },
+  scoreLine: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  error: { color: colors.danger, fontWeight: '600' },
+});
