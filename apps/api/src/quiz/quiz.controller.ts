@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -24,6 +31,24 @@ class AnswerDto {
 class JokerDto {
   @IsIn(['fifty_fifty', 'time_bonus', 'community'])
   type!: 'fifty_fifty' | 'time_bonus' | 'community';
+}
+
+class CreateChallengeDto {
+  @IsString()
+  sessionId!: string;
+}
+
+class ChallengeAnswerDto {
+  @IsString()
+  sessionId!: string;
+
+  @IsIn(['A', 'B', 'C', 'D'])
+  answer!: AnswerKey;
+
+  @IsInt()
+  @Min(0)
+  @Max(60)
+  timeSpent!: number;
 }
 
 @Controller('quiz')
@@ -62,6 +87,30 @@ export class QuizController {
     @Body() dto: JokerDto,
   ) {
     return this.quiz.useJoker(user.userId, sessionId, dto.type);
+  }
+
+  @Post('challenge')
+  createChallenge(@CurrentUser() user: { userId: string }, @Body() dto: CreateChallengeDto) {
+    return this.quiz.createFriendChallenge(user.userId, dto.sessionId);
+  }
+
+  @Get('challenge/:code')
+  getChallenge(@Param('code') code: string) {
+    return this.quiz.getFriendChallenge(code);
+  }
+
+  @Post('challenge/:code/start')
+  startChallenge(@CurrentUser() user: { userId: string }, @Param('code') code: string) {
+    return this.quiz.startFriendChallenge(user.userId, code);
+  }
+
+  @Post('challenge/:code/answer')
+  answerChallenge(
+    @CurrentUser() user: { userId: string },
+    @Param('code') code: string,
+    @Body() dto: ChallengeAnswerDto,
+  ) {
+    return this.quiz.answerFriendChallenge(user.userId, code, dto.sessionId, dto.answer, dto.timeSpent);
   }
 
   @Get('hooks/challenge-friend')

@@ -25,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="leaderboard" options={{ title: 'Classements' }} />
         <Stack.Screen name="duel" options={{ title: 'Duel' }} />
         <Stack.Screen name="profile" options={{ title: 'Profil' }} />
+        <Stack.Screen name="challenge" options={{ title: 'Défi ami' }} />
       </Stack>
     </>
   );

@@ -31,6 +31,7 @@ export class DuelGateway implements OnGatewayConnection {
         (client.handshake.headers.authorization?.replace('Bearer ', '') ?? '');
       const payload = await this.jwt.verifyAsync<{ sub: string }>(token);
       client.data.userId = payload.sub;
+      client.join(`user:${payload.sub}`);
     } catch {
       client.disconnect();
     }
@@ -42,16 +43,17 @@ export class DuelGateway implements OnGatewayConnection {
     @MessageBody() body: { categoryId?: string },
   ) {
     const result = await this.duel.enqueue(client.data.userId, body?.categoryId);
-    if (result.status === 'ready') {
-      const room = `duel:${result.duelId}`;
-      client.join(room);
-      this.server.to(room).emit('duel:matched', result);
-      // Also notify by user rooms if already joined
-      this.server.emit('duel:matched', result);
-    } else {
-      client.join(`duel:${result.duelId}`);
-      client.emit('duel:queued', result);
+    const room = `duel:${result.duelId}`;
+    client.join(room);
 
+    if (result.status === 'ready') {
+      const p1 = (result as any).player1?.id;
+      const p2 = (result as any).player2?.id;
+      if (p1) this.server.to(`user:${p1}`).emit('duel:matched', result);
+      if (p2) this.server.to(`user:${p2}`).emit('duel:matched', result);
+      this.server.to(room).emit('duel:matched', result);
+    } else {
+      client.emit('duel:queued', result);
       setTimeout(async () => {
         const state = await this.duel.getDuel(result.duelId, client.data.userId).catch(() => null);
         if (state?.status === 'matching') {
