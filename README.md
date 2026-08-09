@@ -50,15 +50,17 @@ Par défaut :
 
 | Module | Détail |
 |--------|--------|
-| Auth | Guest 1-tap + register/login JWT + claim compte invité |
-| Solo | 10 Q, chrono 10s, feedback serveur, combos CDC, feedback |
+| Auth | Guest 1-tap + register/login JWT + claim compte invité + onboarding |
+| Solo | 10 Q, chrono 10s, feedback serveur, combos, feedback visuel web/mobile |
 | Jokers | 50/50, +5s, Communauté (1/partie) + recharge 6h / gems / pub stub |
-| Duel | Matchmaking ≤30s, Socket.io `/duel`, niveau ≥5 |
+| Duel | Matchmaking ≤30s, Socket.io `/duel`, Niv. ≥5 + **entraînement bot** |
+| Défi ami | Code + lien 24h, mêmes questions, score à battre |
 | Classements | Redis sorted sets global + hebdo |
-| Progression | Niveaux 1–50, XP, streak, missions simples |
-| Contenu | 5 catégories, **500** questions seed |
-| Viralité | Partage score (Share API) |
-| Hooks V1 | `GET /api/quiz/hooks/challenge-friend`, `.../thematic` |
+| Progression | Niveaux 1–50, XP, streak + rappel navigateur |
+| Missions | Progression + claim manuel des récompenses |
+| Contenu | 5 catégories, ~25 questions uniques / catégorie |
+| Viralité | Partage score + défi ami |
+| Analytics | `POST /api/analytics/events` + funnel 7j |
 
 ## Scripts npm (racine)
 
