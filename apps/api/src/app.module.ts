@@ -1,0 +1,27 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { QuizModule } from './quiz/quiz.module';
+import { DuelModule } from './duel/duel.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import { MissionsModule } from './missions/missions.module';
+import { HealthController } from './health.controller';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    RedisModule,
+    AuthModule,
+    UsersModule,
+    QuizModule,
+    DuelModule,
+    LeaderboardModule,
+    MissionsModule,
+  ],
+  controllers: [HealthController],
+})
+export class AppModule {}

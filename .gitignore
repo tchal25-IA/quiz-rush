@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+build/
+coverage/
+.env
+.env.local
+apps/api/.env
+*.log
+.DS_Store
+apps/api/dist/
+packages/shared/dist/
+apps/mobile/.expo/
+apps/mobile/dist/
+*.tsbuildinfo
+.vercel

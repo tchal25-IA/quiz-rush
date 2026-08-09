@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String?   @unique
+  username     String    @unique
+  passwordHash String?
+  isGuest      Boolean   @default(false)
+
+  level Int @default(1)
+  xp    Int @default(0)
+  gems  Int @default(100)
+
+  streak     Int       @default(0)
+  lastPlayed DateTime?
+
+  isPremium    Boolean   @default(false)
+  premiumUntil DateTime?
+
+  jokerFiftyFifty Int       @default(1)
+  jokerTimeBonus  Int       @default(1)
+  jokerCommunity  Int       @default(1)
+  jokersRechargeAt DateTime?
+
+  adsWatchedToday Int      @default(0)
+  adsResetDate    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions      QuizSession[]
+  duelsAsP1     Duel[]            @relation("Player1")
+  duelsAsP2     Duel[]            @relation("Player2")
+  questions     Question[]
+  achievements  UserAchievement[]
+  missions      UserMission[]
+
+  @@index([username])
+  @@index([level])
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+  icon  String
+  color String
+  order Int
+
+  questions Question[]
+  sessions  QuizSession[]
+  duels     Duel[]
+
+  @@index([slug])
+}
+
+model Question {
+  id            String  @id @default(cuid())
+  text          String
+  answerA       String
+  answerB       String
+  answerC       String
+  answerD       String
+  correctAnswer String
+  explanation   String?
+
+  difficulty String @default("medium")
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  isUGC    Boolean @default(false)
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
+
+  status String @default("active")
+
+  timesShown     Int @default(0)
+  correctAnswers Int @default(0)
+  answerACount   Int @default(0)
+  answerBCount   Int @default(0)
+  answerCCount   Int @default(0)
+  answerDCount   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers Answer[]
+
+  @@index([categoryId])
+  @@index([difficulty])
+  @@index([isUGC, status])
+}
+
+model QuizSession {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  mode String @default("solo")
+
+  score        Int @default(0)
+  maxCombo     Int @default(0)
+  correctCount Int @default(0)
+  currentCombo Int @default(0)
+  currentIndex Int @default(0)
+
+  questionIds String[]
+
+  jokerFiftyUsed     Boolean @default(false)
+  jokerTimeUsed      Boolean @default(false)
+  jokerCommunityUsed Boolean @default(false)
+
+  answers Answer[]
+
+  xpGained   Int @default(0)
+  gemsGained Int @default(0)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([userId])
+  @@index([startedAt])
+}
+
+model Answer {
+  id String @id @default(cuid())
+
+  sessionId String
+  session   QuizSession @relation(fields: [sessionId], references: [id])
+
+  questionId    String
+  question      Question @relation(fields: [questionId], references: [id])
+  userAnswer    String
+  correctAnswer String
+  isCorrect     Boolean
+
+  comboAtTime  Int
+  pointsEarned Int
+  timeSpent    Int
+
+  jokerUsed String?
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model Duel {
+  id String @id @default(cuid())
+
+  player1Id String
+  player1   User   @relation("Player1", fields: [player1Id], references: [id])
+
+  player2Id String?
+  player2   User?   @relation("Player2", fields: [player2Id], references: [id])
+
+  player1Score Int @default(0)
+  player2Score Int @default(0)
+
+  winnerId String?
+  status   String  @default("matching")
+
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  questionIds String[]
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  rarity      String
+  condition   Json
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Mission {
+  id          String @id @default(cuid())
+  code        String @unique
+  title       String
+  description String
+  target      Int
+  xpReward    Int
+  gemsReward  Int    @default(0)
+  active      Boolean @default(true)
+
+  users UserMission[]
+}
+
+model UserMission {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  missionId String
+  mission   Mission @relation(fields: [missionId], references: [id])
+
+  progress  Int     @default(0)
+  completed Boolean @default(false)
+  claimed   Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, missionId])
+  @@index([userId])
+}

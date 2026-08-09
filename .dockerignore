@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+.git
+.github
+**/node_modules
+**/dist
+**/.expo
+**/.env
+**/.env.*
+apps/mobile
+docs
+infra
+*.md
+!README.md
