@@ -86,3 +86,15 @@ Par défaut :
 React Native (Expo) · NestJS · Prisma · PostgreSQL · Redis · Socket.io · JWT
 
 F2P éthique : **pas de pay-to-win** (jamais acheter la bonne réponse).
+
+## Déploiement
+
+| Service | URL |
+|---------|-----|
+| GitHub | https://github.com/tchal25-IA/quiz-rush |
+| API (Railway) | https://api-production-55416.up.railway.app/api |
+| Health | https://api-production-55416.up.railway.app/api/health |
+
+Infra Railway : Postgres + Redis + service `api` (Docker).  
+Front web : Vercel (Expo export).
+

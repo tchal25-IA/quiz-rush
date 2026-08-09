@@ -8,6 +8,7 @@ import { QuizModule } from './quiz/quiz.module';
 import { DuelModule } from './duel/duel.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { MissionsModule } from './missions/missions.module';
+import { SeedModule } from './seed/seed.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { HealthController } from './health.controller';
     DuelModule,
     LeaderboardModule,
     MissionsModule,
+    SeedModule,
   ],
   controllers: [HealthController],
 })
