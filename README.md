@@ -92,9 +92,10 @@ F2P éthique : **pas de pay-to-win** (jamais acheter la bonne réponse).
 | Service | URL |
 |---------|-----|
 | GitHub | https://github.com/tchal25-IA/quiz-rush |
+| App web (Vercel) | https://quiz-rush-web.vercel.app |
 | API (Railway) | https://api-production-55416.up.railway.app/api |
 | Health | https://api-production-55416.up.railway.app/api/health |
 
 Infra Railway : Postgres + Redis + service `api` (Docker).  
-Front web : Vercel (Expo export).
+Front web : Vercel (Expo static export).
 
