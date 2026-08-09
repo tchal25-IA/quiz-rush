@@ -2,20 +2,20 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-COPY packages/shared/package.json packages/shared/
-COPY apps/api/package.json apps/api/
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
 RUN npm ci --workspace=@quiz-rush/shared --workspace=@quiz-rush/api --include-workspace-root
 
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY package.json package-lock.json ./
-COPY packages/shared packages/shared
-COPY apps/api apps/api
+COPY --from=deps /app/package.json /app/package-lock.json ./
+COPY --from=deps /app/packages/shared/package.json ./packages/shared/
+COPY --from=deps /app/apps/api/package.json ./apps/api/
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
 RUN npm run build -w @quiz-rush/shared \
-  && cd apps/api && npx prisma generate \
+  && npx prisma generate --schema apps/api/prisma/schema.prisma \
   && npm run build -w @quiz-rush/api
 
 FROM node:20-alpine AS runner
@@ -28,7 +28,6 @@ COPY --from=build /app/packages/shared ./packages/shared
 COPY --from=build /app/apps/api/package.json ./apps/api/
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 WORKDIR /app/apps/api
 EXPOSE 3000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
