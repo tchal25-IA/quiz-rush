@@ -53,7 +53,7 @@ export const api = {
   startSolo: (categoryId?: string) =>
     request<any>('/quiz/solo/start', {
       method: 'POST',
-      body: JSON.stringify({ categoryId }),
+      body: JSON.stringify(categoryId ? { categoryId } : {}),
     }),
   answer: (sessionId: string, answer: string, timeSpent: number) =>
     request<any>(`/quiz/solo/${sessionId}/answer`, {
@@ -68,12 +68,37 @@ export const api = {
   leaderboard: (type: 'global' | 'weekly' = 'global') =>
     request<any[]>(`/leaderboard?type=${type}`),
   missions: () => request<any[]>('/missions'),
+  claimMission: (id: string) =>
+    request<any>(`/missions/${id}/claim`, { method: 'POST', body: '{}' }),
   queueDuel: (categoryId?: string) =>
     request<any>('/duel/queue', {
       method: 'POST',
-      body: JSON.stringify({ categoryId }),
+      body: JSON.stringify(categoryId ? { categoryId } : {}),
+    }),
+  practiceDuel: (categoryId?: string) =>
+    request<any>('/duel/practice', {
+      method: 'POST',
+      body: JSON.stringify(categoryId ? { categoryId } : {}),
+    }),
+  answerDuel: (duelId: string, questionIndex: number, answer: string) =>
+    request<any>(`/duel/${duelId}/answer`, {
+      method: 'POST',
+      body: JSON.stringify({ questionIndex, answer }),
     }),
   getDuel: (id: string) => request<any>(`/duel/${id}`),
+  createChallenge: (sessionId: string) =>
+    request<any>('/quiz/challenge', {
+      method: 'POST',
+      body: JSON.stringify({ sessionId }),
+    }),
+  getChallenge: (code: string) => request<any>(`/quiz/challenge/${code}`),
+  startChallenge: (code: string) =>
+    request<any>(`/quiz/challenge/${code}/start`, { method: 'POST', body: '{}' }),
+  answerChallenge: (code: string, sessionId: string, answer: string, timeSpent: number) =>
+    request<any>(`/quiz/challenge/${code}/answer`, {
+      method: 'POST',
+      body: JSON.stringify({ sessionId, answer, timeSpent }),
+    }),
   refillJoker: (type: string, method: 'ad' | 'gems') =>
     request<PublicUser>('/users/jokers/refill', {
       method: 'POST',

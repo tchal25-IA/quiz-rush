@@ -324,6 +324,144 @@ export class QuizService {
     };
   }
 
+  async createFriendChallenge(userId: string, sessionId: string) {
+    const session = await this.prisma.quizSession.findFirst({
+      where: { id: sessionId, userId },
+      include: { category: true, user: { select: { username: true } } },
+    });
+    if (!session?.finishedAt) {
+      throw new BadRequestException('Termine d’abord la partie Solo');
+    }
+
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const expiresAt = new Date(Date.now() + 24 * 3600_000);
+    const challenge = await this.prisma.friendChallenge.create({
+      data: {
+        code,
+        creatorId: userId,
+        categoryId: session.categoryId,
+        questionIds: session.questionIds,
+        creatorScore: session.score,
+        creatorCorrect: session.correctCount,
+        creatorMaxCombo: session.maxCombo,
+        creatorSessionId: session.id,
+        expiresAt,
+        status: 'open',
+      },
+    });
+
+    return {
+      code: challenge.code,
+      expiresAt: challenge.expiresAt,
+      creatorScore: challenge.creatorScore,
+      categoryName: session.category.name,
+      creatorUsername: session.user.username,
+    };
+  }
+
+  async getFriendChallenge(code: string) {
+    const challenge = await this.prisma.friendChallenge.findUnique({
+      where: { code: code.toUpperCase() },
+      include: {
+        creator: { select: { username: true } },
+      },
+    });
+    if (!challenge) throw new NotFoundException('Défi introuvable');
+
+    const category = await this.prisma.category.findUnique({ where: { id: challenge.categoryId } });
+    const expired = challenge.expiresAt < new Date();
+    const status = expired && challenge.status === 'open' ? 'expired' : challenge.status;
+
+    return {
+      code: challenge.code,
+      status,
+      creatorUsername: challenge.creator.username,
+      creatorScore: challenge.creatorScore,
+      categoryName: category?.name ?? 'Quiz',
+      expiresAt: challenge.expiresAt,
+      challengerScore: challenge.challengerScore,
+    };
+  }
+
+  async startFriendChallenge(userId: string, code: string) {
+    const challenge = await this.prisma.friendChallenge.findUnique({
+      where: { code: code.toUpperCase() },
+    });
+    if (!challenge) throw new NotFoundException('Défi introuvable');
+    if (challenge.status !== 'open' || challenge.expiresAt < new Date()) {
+      throw new BadRequestException('Défi expiré ou terminé');
+    }
+    if (challenge.creatorId === userId) {
+      throw new BadRequestException('Tu ne peux pas relever ton propre défi');
+    }
+
+    const session = await this.prisma.quizSession.create({
+      data: {
+        userId,
+        categoryId: challenge.categoryId,
+        mode: 'challenge_friend',
+        questionIds: challenge.questionIds,
+      },
+    });
+
+    await this.prisma.friendChallenge.update({
+      where: { id: challenge.id },
+      data: { challengerId: userId, challengerSessionId: session.id },
+    });
+
+    const first = await this.getQuestionPublic(challenge.questionIds[0]);
+    return {
+      sessionId: session.id,
+      code: challenge.code,
+      questionIndex: 0,
+      totalQuestions: challenge.questionIds.length,
+      question: first,
+      score: 0,
+      targetScore: challenge.creatorScore,
+    };
+  }
+
+  async answerFriendChallenge(
+    userId: string,
+    code: string,
+    sessionId: string,
+    answer: AnswerKey,
+    timeSpent: number,
+  ) {
+    const challenge = await this.prisma.friendChallenge.findUnique({
+      where: { code: code.toUpperCase() },
+      include: { creator: { select: { username: true } } },
+    });
+    if (!challenge) throw new NotFoundException('Défi introuvable');
+    if (challenge.challengerSessionId !== sessionId) {
+      throw new BadRequestException('Session défi invalide');
+    }
+
+    const result = await this.answer(userId, sessionId, answer, timeSpent);
+    if (!result.finished || !result.result) return result;
+
+    const updated = await this.prisma.friendChallenge.update({
+      where: { id: challenge.id },
+      data: {
+        status: 'completed',
+        challengerScore: result.result.score,
+        challengerCorrect: result.result.correctCount,
+        finishedAt: new Date(),
+      },
+    });
+
+    return {
+      ...result,
+      challengeResult: {
+        creatorUsername: challenge.creator.username,
+        creatorScore: challenge.creatorScore,
+        challengerScore: updated.challengerScore,
+        won: (updated.challengerScore ?? 0) > challenge.creatorScore,
+        draw: updated.challengerScore === challenge.creatorScore,
+      },
+    };
+  }
+
   async getQuestionPublic(id: string): Promise<QuestionPublicDto> {
     const q = await this.prisma.question.findUnique({ where: { id } });
     if (!q) throw new NotFoundException('Question introuvable');
@@ -349,18 +487,18 @@ export class QuizService {
     return session;
   }
 
-  /** V1 hooks — stubs */
+  /** V1 hooks */
   challengeFriendStub() {
     return {
-      available: false,
-      message: 'Mode Défi ami — prévu V1. Lien partage disponible côté client.',
+      available: true,
+      message: 'Crée un défi depuis l’écran résultats, ou ouvre /challenge?code=XXXX',
     };
   }
 
   thematicStub() {
     return {
       available: false,
-      message: 'Mode Thématique — prévu V1.',
+      message: 'Mode Thématique — prévu V1.1',
     };
   }
 }

@@ -35,12 +35,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions      QuizSession[]
-  duelsAsP1     Duel[]            @relation("Player1")
-  duelsAsP2     Duel[]            @relation("Player2")
-  questions     Question[]
-  achievements  UserAchievement[]
-  missions      UserMission[]
+  sessions           QuizSession[]
+  duelsAsP1          Duel[]            @relation("Player1")
+  duelsAsP2          Duel[]            @relation("Player2")
+  questions          Question[]
+  achievements       UserAchievement[]
+  missions           UserMission[]
+  challengesCreated  FriendChallenge[] @relation("ChallengeCreator")
+  challengesTaken    FriendChallenge[] @relation("ChallengeChallenger")
+  analyticsEvents    AnalyticsEvent[]
 
   @@index([username])
   @@index([level])
@@ -241,4 +244,55 @@ model UserMission {
 
   @@unique([userId, missionId])
   @@index([userId])
+}
+
+model FriendChallenge {
+  id String @id @default(cuid())
+
+  code String @unique
+
+  creatorId String
+  creator   User   @relation("ChallengeCreator", fields: [creatorId], references: [id])
+
+  challengerId String?
+  challenger   User?   @relation("ChallengeChallenger", fields: [challengerId], references: [id])
+
+  categoryId  String
+  questionIds String[]
+
+  creatorScore    Int
+  creatorCorrect  Int
+  creatorMaxCombo Int @default(0)
+
+  challengerScore   Int?
+  challengerCorrect Int?
+
+  creatorSessionId     String?
+  challengerSessionId  String?
+
+  status    String   @default("open")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  finishedAt DateTime?
+
+  @@index([code])
+  @@index([creatorId])
+  @@index([status])
+}
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  name  String
+  props Json?
+  sessionId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([userId])
+  @@index([sessionId])
 }

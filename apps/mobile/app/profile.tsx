@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,7 +9,9 @@ import {
 } from 'react-native';
 import type { PublicUser } from '@quiz-rush/shared';
 import { api } from '../src/api';
+import { analytics } from '../src/analytics';
 import { colors } from '../src/theme';
+import { TapButton } from '../src/ui/TapButton';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<PublicUser | null>(null);
@@ -21,6 +22,7 @@ export default function ProfileScreen() {
   const [password, setPassword] = useState('');
   const [authMsg, setAuthMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<string | null>(null);
 
   async function refresh() {
     setLoading(true);
@@ -45,6 +47,7 @@ export default function ProfileScreen() {
       setUser(auth.user);
       setAuthMsg('Compte créé — progression conservée');
       setPassword('');
+      analytics.track('claim_account', {});
       await refresh();
     } catch (e: any) {
       setAuthMsg(e.message ?? 'Erreur');
@@ -61,11 +64,43 @@ export default function ProfileScreen() {
       setUser(auth.user);
       setAuthMsg(`Connecté : ${auth.user.username}`);
       setPassword('');
+      analytics.track('login', {});
       await refresh();
     } catch (e: any) {
       setAuthMsg(e.message ?? 'Erreur');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function claimMission(id: string) {
+    try {
+      await api.claimMission(id);
+      analytics.track('mission_claim', { id });
+      await refresh();
+    } catch (e: any) {
+      setAuthMsg(e.message);
+    }
+  }
+
+  async function enableStreakReminders() {
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          new Notification('Quiz Rush', {
+            body: `Streak ${user?.streak ?? 0} — reviens jouer demain pour le garder !`,
+          });
+          setNotifMsg('Rappels streak activés sur ce navigateur');
+          analytics.track('streak_notif_enabled', {});
+          return;
+        }
+        setNotifMsg('Permission refusée — pense à jouer chaque jour');
+        return;
+      }
+      setNotifMsg('Notifications navigateur non disponibles — le bandeau streak reste actif');
+    } catch {
+      setNotifMsg('Impossible d’activer les notifications');
     }
   }
 
@@ -80,7 +115,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.name}>{user.username}</Text>
-      <Text style={styles.muted}>{user.isGuest ? 'Compte invité' : 'Compte lié'}</Text>
+      <Text style={styles.muted}>{user.isGuest ? 'Compte invité — sauvegarde recommandée' : 'Compte lié'}</Text>
 
       <View style={styles.card}>
         <Text style={styles.line}>Niveau {user.level} · {user.xp} XP</Text>
@@ -88,6 +123,11 @@ export default function ProfileScreen() {
         <Text style={styles.line}>Streak : {user.streak} jour(s)</Text>
         <Text style={styles.line}>Premium : {user.isPremium ? 'Oui' : 'Non (stub MVP)'}</Text>
       </View>
+
+      <TapButton style={styles.btn} onPress={enableStreakReminders}>
+        <Text style={styles.btnText}>Activer rappel streak</Text>
+      </TapButton>
+      {notifMsg ? <Text style={styles.authMsg}>{notifMsg}</Text> : null}
 
       {user.isGuest ? (
         <>
@@ -118,9 +158,9 @@ export default function ProfileScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <Pressable style={styles.cta} disabled={busy} onPress={claimAccount}>
+            <TapButton style={styles.cta} disabled={busy} onPress={claimAccount}>
               <Text style={styles.ctaText}>{busy ? '…' : 'Sauvegarder ma progression'}</Text>
-            </Pressable>
+            </TapButton>
           </View>
         </>
       ) : null}
@@ -143,9 +183,9 @@ export default function ProfileScreen() {
           value={password}
           onChangeText={setPassword}
         />
-        <Pressable style={styles.btn} disabled={busy} onPress={loginAccount}>
+        <TapButton style={styles.btn} disabled={busy} onPress={loginAccount}>
           <Text style={styles.btnText}>Connexion</Text>
-        </Pressable>
+        </TapButton>
       </View>
       {authMsg ? <Text style={styles.authMsg}>{authMsg}</Text> : null}
 
@@ -157,7 +197,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.row}>
-        <Pressable
+        <TapButton
           style={styles.btn}
           onPress={async () => {
             await api.refillJoker('fifty_fifty', 'ad');
@@ -165,8 +205,8 @@ export default function ProfileScreen() {
           }}
         >
           <Text style={styles.btnText}>Pub → 50/50</Text>
-        </Pressable>
-        <Pressable
+        </TapButton>
+        <TapButton
           style={styles.btn}
           onPress={async () => {
             await api.refillJoker('time_bonus', 'gems');
@@ -174,7 +214,7 @@ export default function ProfileScreen() {
           }}
         >
           <Text style={styles.btnText}>100 gems → +5s</Text>
-        </Pressable>
+        </TapButton>
       </View>
 
       <Text style={styles.section}>Missions</Text>
@@ -185,6 +225,14 @@ export default function ProfileScreen() {
             {m.description} · {m.progress}/{m.target}
             {m.completed ? ' ✓' : ''}
           </Text>
+          {m.completed && !m.claimed ? (
+            <TapButton style={styles.cta} onPress={() => claimMission(m.id)}>
+              <Text style={styles.ctaText}>
+                Réclamer (+{m.xpReward} XP / {m.gemsReward} gems)
+              </Text>
+            </TapButton>
+          ) : null}
+          {m.claimed ? <Text style={styles.authMsg}>Récompense réclamée</Text> : null}
         </View>
       ))}
     </ScrollView>

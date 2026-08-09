@@ -207,6 +207,7 @@ export class DuelService {
       correctAnswer: question.correctAnswer,
       pointsEarned: points,
       myScore: isP1 ? updated.player1Score : updated.player2Score,
+      opponentScore: isP1 ? updated.player2Score : updated.player1Score,
       finished,
       winnerId,
     };
@@ -219,5 +220,81 @@ export class DuelService {
       if (entry.userId === userId) await this.redis.lrem(QUEUE_KEY, 1, raw);
     }
     return { ok: true };
+  }
+
+  /** Entraînement vs bot — disponible dès le niveau 1 */
+  async startPractice(userId: string, categoryId?: string) {
+    const category = categoryId
+      ? await this.prisma.category.findUnique({ where: { id: categoryId } })
+      : await this.prisma.category.findFirst({ orderBy: { order: 'asc' } });
+    if (!category) throw new NotFoundException('Catégorie introuvable');
+
+    const pool = await this.prisma.question.findMany({
+      where: { categoryId: category.id, status: 'active' },
+      select: { id: true },
+    });
+    const questionIds = [...pool]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, QUESTIONS_PER_SESSION)
+      .map((q) => q.id);
+
+    // Bot user (créé une fois)
+    let bot = await this.prisma.user.findUnique({ where: { username: 'QuizBot' } });
+    if (!bot) {
+      bot = await this.prisma.user.create({
+        data: {
+          username: 'QuizBot',
+          isGuest: false,
+          level: 10,
+          xp: 500,
+        },
+      });
+    }
+
+    const duel = await this.prisma.duel.create({
+      data: {
+        player1Id: userId,
+        player2Id: bot.id,
+        categoryId: category.id,
+        questionIds,
+        status: 'playing',
+      },
+      include: {
+        player1: { select: { id: true, username: true, level: true } },
+        player2: { select: { id: true, username: true, level: true } },
+      },
+    });
+
+    // Pré-calcule un score bot ~60-80%
+    let botScore = 0;
+    let streak = 0;
+    for (const qid of questionIds) {
+      const q = await this.prisma.question.findUnique({ where: { id: qid } });
+      const correct = Math.random() < 0.7;
+      if (correct) {
+        streak += 1;
+        botScore += computePoints(BASE_POINTS, streak);
+      } else {
+        streak = 0;
+      }
+    }
+    await this.prisma.duel.update({
+      where: { id: duel.id },
+      data: { player2Score: botScore },
+    });
+    await this.redis.set(`duel:${duel.id}:progress:${bot.id}`, String(QUESTIONS_PER_SESSION), 600);
+
+    const questions = await Promise.all(questionIds.map((id) => this.quiz.getQuestionPublic(id)));
+
+    return {
+      duelId: duel.id,
+      status: 'ready' as const,
+      categoryId: category.id,
+      opponent: duel.player2!,
+      questions,
+      player1: duel.player1,
+      player2: duel.player2!,
+      practice: true,
+    };
   }
 }
