@@ -1,5 +1,3 @@
-Dockerfile
-.dockerignore
 .git
 .github
 **/node_modules
@@ -10,5 +8,6 @@ Dockerfile
 apps/mobile
 docs
 infra
+screenshots
 *.md
 !README.md
