@@ -52,12 +52,10 @@ export class DailyChallengeService {
   }
 
   async getUserParticipation(userId: string, challengeId: string) {
-    return this.prisma.dailyChallengeParticipation.findUnique({
+    return this.prisma.dailyChallengeParticipation.findFirst({
       where: {
-        userId_challengeId: {
-          userId,
-          challengeId,
-        },
+        userId,
+        challengeId,
       },
     });
   }
