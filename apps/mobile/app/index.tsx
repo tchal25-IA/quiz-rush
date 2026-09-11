@@ -136,6 +136,15 @@ export default function HomeScreen() {
         </TapButton>
       ))}
 
+      <TapButton style={styles.dailyBanner} onPress={() => router.push('/daily')}>
+        <Text style={styles.dailyIcon}>🌟</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.dailyTitle}>Défi du jour</Text>
+          <Text style={styles.dailyText}>Nouveau challenge quotidien disponible</Text>
+        </View>
+        <Text style={styles.dailyArrow}>→</Text>
+      </TapButton>
+
       <View style={styles.row}>
         <NavBtn
           label="Duel"
@@ -266,6 +275,21 @@ const styles = StyleSheet.create({
   },
   navText: { color: colors.text, fontWeight: '700' },
   hint: { color: colors.muted, fontSize: 11, marginTop: 4 },
+  dailyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.card,
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 8,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  dailyIcon: { fontSize: 32 },
+  dailyTitle: { color: colors.primary, fontWeight: '800', fontSize: 16 },
+  dailyText: { color: colors.text, fontSize: 13 },
+  dailyArrow: { color: colors.primary, fontSize: 24, fontWeight: '700' },
   challengeLink: { padding: 12, alignItems: 'center' },
   challengeLinkText: { color: colors.accent, fontWeight: '700' },
   cta: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },

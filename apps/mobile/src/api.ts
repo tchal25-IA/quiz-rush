@@ -30,6 +30,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body: any) =>
+    request<T>(path, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   async ensureGuest(): Promise<AuthResponse> {
     const existing = await AsyncStorage.getItem(TOKEN_KEY);
     if (existing) {

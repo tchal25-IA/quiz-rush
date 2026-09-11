@@ -10,6 +10,7 @@ import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { MissionsModule } from './missions/missions.module';
 import { SeedModule } from './seed/seed.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { DailyChallengeModule } from './daily-challenge/daily-challenge.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -25,6 +26,7 @@ import { HealthController } from './health.controller';
     MissionsModule,
     SeedModule,
     AnalyticsModule,
+    DailyChallengeModule,
   ],
   controllers: [HealthController],
 })
