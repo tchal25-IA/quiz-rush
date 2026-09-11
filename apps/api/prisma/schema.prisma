@@ -44,6 +44,7 @@ model User {
   challengesCreated  FriendChallenge[] @relation("ChallengeCreator")
   challengesTaken    FriendChallenge[] @relation("ChallengeChallenger")
   analyticsEvents    AnalyticsEvent[]
+  dailyParticipations DailyChallengeParticipation[]
 
   @@index([username])
   @@index([level])
@@ -295,4 +296,41 @@ model AnalyticsEvent {
   @@index([name, createdAt])
   @@index([userId])
   @@index([sessionId])
+}
+
+model DailyChallenge {
+  id String @id @default(cuid())
+
+  date       DateTime @unique
+  categoryId String
+  questionIds String[]
+
+  participations DailyChallengeParticipation[]
+
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model DailyChallengeParticipation {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  challengeId String
+  challenge   DailyChallenge @relation(fields: [challengeId], references: [id])
+
+  sessionId String?
+  score     Int     @default(0)
+  correct   Int     @default(0)
+  maxCombo  Int     @default(0)
+  completed Boolean @default(false)
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, challengeId])
+  @@index([challengeId, score])
+  @@index([userId])
 }

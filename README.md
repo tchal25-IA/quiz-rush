@@ -52,10 +52,11 @@ Par défaut :
 |--------|--------|
 | Auth | Guest 1-tap + register/login JWT + claim compte invité + onboarding |
 | Solo | 10 Q, chrono 10s, feedback serveur, combos, feedback visuel web/mobile |
+| **🌟 Défi quotidien** | **1 challenge/jour, classement quotidien, 1 essai unique** |
 | Jokers | 50/50, +5s, Communauté (1/partie) + recharge 6h / gems / pub stub |
 | Duel | Matchmaking ≤30s, Socket.io `/duel`, Niv. ≥5 + **entraînement bot** |
 | Défi ami | Code + lien 24h, mêmes questions, score à battre |
-| Classements | Redis sorted sets global + hebdo |
+| Classements | Redis sorted sets global + hebdo + **classement quotidien** |
 | Progression | Niveaux 1–50, XP, streak + rappel navigateur |
 | Missions | Progression + claim manuel des récompenses |
 | Contenu | 5 catégories, ~25 questions uniques / catégorie |
@@ -72,14 +73,28 @@ Par défaut :
 
 ## API utile
 
+### Auth & Utilisateur
 - `POST /api/auth/guest`
 - `POST /api/auth/register` · `POST /api/auth/login`
 - `GET /api/users/me`
+
+### Quiz
 - `GET /api/quiz/categories`
 - `POST /api/quiz/solo/start`
 - `POST /api/quiz/solo/:id/answer`
 - `POST /api/quiz/solo/:id/joker`
+
+### Défi quotidien (Phase 2) 🆕
+- `GET /api/daily-challenge/today` — défi du jour
+- `POST /api/daily-challenge/start` — démarrer
+- `POST /api/daily-challenge/answer/:sessionId` — répondre
+- `GET /api/daily-challenge/leaderboard` — classement du jour
+
+### Multijoueur
 - `POST /api/duel/queue`
+- `POST /api/duel/practice`
+
+### Progression
 - `GET /api/leaderboard?type=global|weekly`
 - `GET /api/missions`
 
@@ -91,13 +106,18 @@ F2P éthique : **pas de pay-to-win** (jamais acheter la bonne réponse).
 
 ## Déploiement
 
-| Service | URL |
-|---------|-----|
-| GitHub | https://github.com/tchal25-IA/quiz-rush |
-| App web (Vercel) | https://quiz-rush-web.vercel.app |
-| API (Railway) | https://api-production-55416.up.railway.app/api |
-| Health | https://api-production-55416.up.railway.app/api/health |
+| Service | URL | Status |
+|---------|-----|--------|
+| GitHub | https://github.com/tchal25-IA/quiz-rush | ✅ |
+| App web (Vercel) | https://quiz-rush-web.vercel.app | ✅ |
+| API (Railway) | ~~https://api-production-55416.up.railway.app/api~~ | ❌ DOWN |
+| **API (Render)** | **À déployer** | ⏳ Voir [DEPLOY-RENDER.md](./DEPLOY-RENDER.md) |
 
-Infra Railway : Postgres + Redis + service `api` (Docker).  
-Front web : Vercel (Expo static export).
+### État actuel (11 sept 2026)
+- ✅ Front web Vercel fonctionne
+- ❌ API Railway est DOWN ("Application not found")
+- 📋 Configuration Render.com prête dans `render.yaml`
+- 📖 Guide de déploiement complet : [DEPLOY-RENDER.md](./DEPLOY-RENDER.md)
+
+**Pour remonter l'API :** suivre le guide [DEPLOY-RENDER.md](./DEPLOY-RENDER.md) (5 minutes, free tier).
 
